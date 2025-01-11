@@ -1,7 +1,10 @@
 package metrics
 
 import (
+	"encoding/csv"
+	"encoding/json"
 	"fmt"
+	"os"
 	"runtime"
 	"time"
 
@@ -79,7 +82,7 @@ func (m *Metrics) RecordCPUUsage() error {
 
 }
 
-func (m *Metrics) PrintMetrics() string {
+func (m *Metrics) String() string {
 
 	return fmt.Sprintf(
 		"Latency: %v\n"+
@@ -97,5 +100,71 @@ func (m *Metrics) PrintMetrics() string {
 		m.CPUUsage,
 		m.MemoryUsage,
 	)
+
+}
+
+func (m *Metrics) Json() (string, error) {
+
+	jsonbytes, err := json.MarshalIndent(m, "", "  ") // 2 spaces
+	if err != nil {
+		return "", fmt.Errorf("failed to serialize metrics to JSON: %v", err)
+	}
+	jsonstring := string(jsonbytes)
+	return string(jsonstring), nil
+}
+
+func (m *Metrics) CSV(filename string) (string, error) {
+
+	file, err := os.Create(filename)
+	if err != nil {
+		return "", fmt.Errorf("failed to create CSV file: %v", err)
+	}
+	defer file.Close()
+
+	//  intaiate csv writer
+	csvWriter := csv.NewWriter(file)
+	// TODO : USING REFLECTION
+	// Write the header
+	header := []string{
+		"Latency",
+		"Throughput (bytes/sec)",
+		"Bytes Written",
+		"Bytes Read",
+		"Total IOPS",
+		"CPU Usage (%)",
+		"Memory Usage (bytes)",
+	}
+	if err := csvWriter.Write(header); err != nil {
+		return "", fmt.Errorf("failed to write CSV header: %v", err)
+	}
+
+	// Write the data
+
+	// Write the data
+	record := []string{
+		m.Latency().String(),
+		fmt.Sprintf("%.2f", m.Throughput()),
+		fmt.Sprintf("%d", m.BytesWritten),
+		fmt.Sprintf("%d", m.BytesRead),
+		fmt.Sprintf("%d", m.TotalIOPS),
+		fmt.Sprintf("%.2f", m.CPUUsage),
+		fmt.Sprintf("%d", m.MemoryUsage),
+	}
+	if err := csvWriter.Write(record); err != nil {
+		return "", fmt.Errorf("failed to write CSV record: %v", err)
+	}
+
+	// Flush the CSV writer
+	csvWriter.Flush()
+	if err := csvWriter.Error(); err != nil {
+		fmt.Errorf("failed to flush CSV writer: %v", err)
+	}
+	// Read data and return
+	csvDataBytes, err := os.ReadFile(filename)
+	if err != nil {
+		return "", fmt.Errorf("failed to read CSV data: %v", err)
+	}
+
+	return string(csvDataBytes), nil
 
 }

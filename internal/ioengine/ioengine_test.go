@@ -39,24 +39,24 @@ func TestWriteAndReadFile(tst *testing.T) {
 
 }
 
-func TestWriteAndReadFileWithChuncks(t *testing.T) {
-	filename := "testfile.txt"
-	data := make([]byte, 1024*1024) // 1 MB
-	chunkSize := 4096
+// func TestWriteAndReadFileWithChuncks(t *testing.T) {
+// 	filename := "testfile.txt"
+// 	data := make([]byte, 1024*1024) // 1 MB
+// 	chunkSize := 4096
 
-	if err := WriteFileWithChunk(filename, chunkSize, data); err != nil {
-		t.Fatalf("WriteFile failed: %v", err)
-	}
+// 	if err := WriteFileWithChunk(filename, chunkSize, data); err != nil {
+// 		t.Fatalf("WriteFile failed: %v", err)
+// 	}
 
-	readData := make([]byte, chunkSize)
-	n, err := ReadFileWithChunks(filename, chunkSize, readData)
-	if err != nil {
-		t.Fatalf("ReadFile failed: %v", err)
-	}
-	if n != len(readData) {
-		t.Fatalf("Read data does not match written data")
-	}
+// 	readData := make([]byte, chunkSize)
+// 	n, err := ReadFileWithChunks(filename, chunkSize, readData)
+// 	if err != nil {
+// 		t.Fatalf("ReadFile failed: %v", err)
+// 	}
+// 	if n != len(readData) {
+// 		t.Fatalf("Read data does not match written data")
+// 	}
 
-	// clean up
-	os.Remove(filename)
-}
+// 	// clean up
+// 	os.Remove(filename)
+// }

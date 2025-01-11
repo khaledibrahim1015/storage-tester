@@ -31,6 +31,6 @@ func TestMetrics(t *testing.T) {
 	metric.Stop()
 
 	// Print metrics
-	fmt.Println(metric.PrintMetrics())
+	fmt.Println(metric.String())
 
 }
