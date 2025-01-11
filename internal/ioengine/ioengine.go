@@ -1,26 +1,11 @@
 package ioengine
 
 import (
+	"fmt"
 	"io"
+	"math/rand"
 	"os"
 )
-
-// WriteFile writes data to a file at the specified path.
-func WriteFile(filename string, data []byte) error {
-
-	file, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	_, err = file.Write(data)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
 
 // WriteFile writes data to a file in chunks.
 func WriteFileWithChunk(filename string, chunkSize int, data []byte) error {
@@ -48,6 +33,105 @@ func WriteFileWithChunk(filename string, chunkSize int, data []byte) error {
 
 	return nil
 
+}
+
+func ReadFileWithChunks(filename string, chunkSize int) ([]byte, error) {
+	// Open the file
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	// Get file information
+	fileinfo, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a buffer to hold the file data
+	filesize := fileinfo.Size()
+	data := make([]byte, filesize)
+
+	// Read the file in chunks
+	for offset := 0; offset < int(filesize); offset += chunkSize {
+		// Calculate the end offset for the current chunk
+		endOffset := offset + chunkSize
+		if endOffset > int(filesize) {
+			endOffset = int(filesize)
+		}
+
+		// Read the chunk into the buffer
+		n, err := file.ReadAt(data[offset:endOffset], int64(offset))
+		if err != nil {
+			return nil, fmt.Errorf("failed to read chunk at offset %d: %v", offset, err)
+		}
+
+		// Handle partial reads
+		if n < (endOffset - offset) {
+			return nil, fmt.Errorf("partial read: expected %d bytes, got %d", endOffset-offset, n)
+		}
+	}
+
+	return data, nil
+}
+
+// GenerateTestFile generates a file of the specified size filled with random data.
+func GenerateTestFile(filename string, filesize int64) error {
+
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Write random data to the file in chunks
+	bufferSize := 1024 * 1024 // 1 MB buffer
+
+	buffer := make([]byte, bufferSize)
+	remaining := filesize
+
+	for remaining > 0 {
+
+		if remaining < int64(bufferSize) {
+			buffer = make([]byte, remaining)
+		}
+
+		// Fill the buffer with random data
+		_, err := rand.Read(buffer)
+		if err != nil {
+			return err
+		}
+
+		// Write the buffer to the file
+		_, err = file.Write(buffer)
+		if err != nil {
+			return err
+		}
+
+		//  for next iteration
+		remaining -= int64(len(buffer))
+
+	}
+	return nil
+
+}
+
+// WriteFile writes data to a file at the specified path.
+func WriteFile(filename string, data []byte) error {
+
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.Write(data)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // ReadFile reads data from a file at the specified path.
@@ -90,34 +174,7 @@ func ReadFileData(filename string) ([]byte, error) {
 	return buffer, err
 }
 
-// ReadFile reads data from a file in chunks.
-// func ReadFileWithChunks(filename string, chunkSize int, data []byte) (int, error) {
-
-// 	file, err := os.Open(filename)
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	defer file.Close()
-
-// 	//  Get FileStat FileInfo
-// 	fileinfo, err := file.Stat()
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	var n int
-// 	for offset := 0; offset < int(fileinfo.Size()); offset += chunkSize {
-
-// 		endOffset := offset + chunkSize
-// 		n, err = file.ReadAt(data[offset:endOffset], int64(offset))
-// 		if err != nil {
-// 			return n, err
-// 		}
-// 	}
-
-// 	return n, nil
-// }
-
-func ReadFileWithChunks(filename string, chunkSize int, data []byte) (int, error) {
+func ReadFileWithChunksV2(filename string, chunkSize int, data []byte) (int, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return 0, err
